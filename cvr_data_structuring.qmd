@@ -11,16 +11,19 @@ library(tidyverse)
 library(janitor)
 library(dplyr)
 library(gtExtras)
-
-install.packages(c("usethis", "gitcreds"))
-
+getwd()
 ```
 
 ```{r}
 #| label: allen-oh-2020
 
+list.files("data/")
+list.files("data/", pattern = "Allen_OH_2020", recursive = TRUE)
+
 # Importing data
-allen_oh_2020_raw <- read_excel("Ohio 2020/Data/Allen County CVR Data/Allen_OH_2020.xlsx") |> 
+allen_oh_2020_raw <- read_excel(
+  "data/Ohio 2020/Data/Allen County CVR Data/Allen_OH_2020.xlsx"
+  ) |> 
   clean_names() |> 
   suppressWarnings()
 
@@ -101,7 +104,7 @@ allen_oh_2020 <- allen_oh_2020_raw |>
 
 # Importing data
 allen_oh_2024_raw<- read_excel(
-  "Ohio 2024/Data/Allen County CVR Data/Allen_OH_2024.xlsx"
+  "data/Ohio 2024/Data/Allen County CVR Data/Allen_OH_2024.xlsx"
   ) |> 
   clean_names() |> 
   suppressWarnings()
@@ -190,7 +193,9 @@ allen_oh_2024 <- allen_oh_2024_raw |>
 #| label: ashtabula-oh-2020
 
 # Importing data
-ashtabula_oh_2020_raw <- read_excel("Ohio 2020/Data/Ashtabula County CVR Data/Ashtabula_OH_2020.xlsx") |> 
+ashtabula_oh_2020_raw <- read_excel(
+  "data/Ohio 2020/Data/Ashtabula County CVR Data/Ashtabula_OH_2020.xlsx"
+  ) |> 
   clean_names() |> 
   suppressWarnings()
 
@@ -274,7 +279,7 @@ ashtabula_oh_2020 <- ashtabula_oh_2020_raw |>
 
 # Importing data
 ashtabula_oh_2024_raw<- read_excel(
-  "Ohio 2024/Data/Ashtabula County CVR Data/Ashtabula_OH_2024.xlsx"
+  "data/Ohio 2024/Data/Ashtabula County CVR Data/Ashtabula_OH_2024.xlsx"
   ) |> 
   clean_names() |> 
   suppressWarnings()
@@ -360,52 +365,6 @@ ashtabula_oh_2024 <- ashtabula_oh_2024_raw |>
       TRUE ~ FALSE
     )
   )
-
-```
-
-```{r}
-#| label: ashtabula-oh-analysis
-
-ashtabula_oh_2024_table <- ashtabula_oh_2024 |>
-  group_by(party_line_voter) |>
-  filter(!(is.na(party_line_voter))) |> 
-  summarise(
-    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
-    total = n()
-  )
-
-ashtabula_oh_2020_table <- ashtabula_oh_2020 |>
-  group_by(party_line_voter) |>
-  filter(!(is.na(party_line_voter))) |> 
-  summarise(
-    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
-    total = n()
-  )
-
-
-combined_table <- bind_rows(
-  "2020" = ashtabula_oh_2020_table,
-  "2024" = ashtabula_oh_2024_table,
-  .id = "year"
-)
-
-combined_table |>
-  gt() |>
-  tab_header(
-    title = "Straight-Ticket Voting and SC Races",
-    subtitle = "Comparison of 2020 (unlabeled) and 2024 (labeled)"
-  ) |>
-  fmt_percent(
-    columns = prop_sc_in_line,
-    decimals = 1
-  ) |>
-  cols_label(
-    year = "Year",
-    party_line_voter = "Party-Line",
-    prop_sc_in_line = "Voted In Line (%)",
-    total = "Number of Voters"
-  ) |> 
-  gt_theme_538()
 
 ```
 

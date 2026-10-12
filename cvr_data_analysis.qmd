@@ -1,0 +1,106 @@
+---
+title: "cvr_data_analysis"
+format: html
+---
+
+```{r}
+#| label: load-packages
+
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(gtExtras)
+
+```
+
+```{r}
+#| label: ashtabula-oh-analysis
+
+# need to write cleaned data to paraquet files to be used for analysis here
+|>
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+ashtabula_oh_2020_table <- ashtabula_oh_2020 |>
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+
+combined_table <- bind_rows(
+  "2020" = ashtabula_oh_2020_table,
+  "2024" = ashtabula_oh_2024_table,
+  .id = "year"
+)
+
+combined_table |>
+  gt() |>
+  tab_header(
+    title = "Straight-Ticket Voting and SC Races",
+    subtitle = "Comparison of 2020 (unlabeled) and 2024 (labeled)"
+  ) |>
+  fmt_percent(
+    columns = prop_sc_in_line,
+    decimals = 1
+  ) |>
+  cols_label(
+    year = "Year",
+    party_line_voter = "Party-Line",
+    prop_sc_in_line = "Voted In Line (%)",
+    total = "Number of Voters"
+  ) |> 
+  gt_theme_538()
+
+``````{r}
+#| label: ashtabula-oh-analysis
+
+ashtabula_oh_2024_table <- ashtabula_oh_2024 |>
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+ashtabula_oh_2020_table <- ashtabula_oh_2020 |>
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+
+combined_table <- bind_rows(
+  "2020" = ashtabula_oh_2020_table,
+  "2024" = ashtabula_oh_2024_table,
+  .id = "year"
+)
+
+combined_table |>
+  gt() |>
+  tab_header(
+    title = "Straight-Ticket Voting and SC Races",
+    subtitle = "Comparison of 2020 (unlabeled) and 2024 (labeled)"
+  ) |>
+  fmt_percent(
+    columns = prop_sc_in_line,
+    decimals = 1
+  ) |>
+  cols_label(
+    year = "Year",
+    party_line_voter = "Party-Line",
+    prop_sc_in_line = "Voted In Line (%)",
+    total = "Number of Voters"
+  ) |> 
+  gt_theme_538()
+
+```
