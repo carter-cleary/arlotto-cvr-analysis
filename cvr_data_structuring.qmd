@@ -30,7 +30,7 @@ allen_oh_2020 <- allen_oh_2020_raw |>
   # Selecting races of interest (major partisan races and Supreme Court)
   select(cast_vote_record, for_president_and_vice_president, 
          for_representative_to_congress_4th_district, 
-         for_state_senator_12th_district, for_state_representative_4th_district, 
+         for_state_senator_12th_district, 
          for_justice_of_the_supreme_court_1_1,
          for_justice_of_the_supreme_court_1_2
          ) |> 
@@ -39,7 +39,6 @@ allen_oh_2020 <- allen_oh_2020_raw |>
     pres = for_president_and_vice_president,
     us_rep_4d = for_representative_to_congress_4th_district,
     state_sen_12d = for_state_senator_12th_district,
-    state_rep_4d = for_state_representative_4th_district,
     sc_justice_20_1 = for_justice_of_the_supreme_court_1_1,
     sc_justice_20_2 = for_justice_of_the_supreme_court_1_2
   ) |> 
@@ -52,8 +51,7 @@ allen_oh_2020 <- allen_oh_2020_raw |>
          !is.na(pres),
          str_detect(pres, "Rep|Dem"),
          str_detect(us_rep_4d, "Rep|Dem"),
-         str_detect(state_sen_12d, "Rep|Dem"),
-         !(is.na(state_rep_4d))
+         str_detect(state_sen_12d, "Rep|Dem")
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -64,8 +62,6 @@ allen_oh_2020 <- allen_oh_2020_raw |>
       str_detect(us_rep_4d, "Rep"), "GOP", "DEM"),
     state_sen_12d = if_else(
       str_detect(state_sen_12d, "Rep"), "GOP", "DEM"),
-    state_rep_4d = if_else(
-      str_detect(state_rep_4d, "Rep"), "GOP", "DEM"),
     sc_justice_20_1 = if_else(
       str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
     sc_justice_20_2 = if_else(
@@ -75,10 +71,8 @@ allen_oh_2020 <- allen_oh_2020_raw |>
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
   mutate(
     party_line_voter = case_when(
-      pres == "GOP" & us_rep_4d == "GOP" & state_sen_12d == "GOP" &
-      state_rep_4d == "GOP" ~ "GOP",
-      pres == "DEM" & us_rep_4d == "DEM" & state_sen_12d == "DEM" &
-      state_rep_4d == "DEM" ~ "DEM",
+      pres == "GOP" & us_rep_4d == "GOP" & state_sen_12d == "GOP" ~ "GOP",
+      pres == "DEM" & us_rep_4d == "DEM" & state_sen_12d == "DEM" ~ "DEM",
       TRUE ~ NA
     )
   ) |> 
@@ -122,7 +116,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
     pres = for_president_and_vice_president,
     us_rep_4d = for_representative_to_congress_4th_district,
     us_sen = for_u_s_senator,
-    state_rep_78d = for_state_representative_78th_district,
     sc_justice_24_1 = for_justice_of_the_supreme_court_1_1_25,
     sc_justice_24_2 = for_justice_of_the_supreme_court_1_2_25,
     sc_justice_24_3 = for_justice_of_the_supreme_court_ute_12_31_26
@@ -136,8 +129,7 @@ allen_oh_2024 <- allen_oh_2024_raw |>
          !is.na(pres),
          str_detect(pres, "Rep|Dem"),
          str_detect(us_sen, "Rep|Dem"),
-         str_detect(us_rep_4d, "Rep|Dem"),
-         !(is.na(state_rep_78d))
+         str_detect(us_rep_4d, "Rep|Dem")
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -148,8 +140,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
       str_detect(us_sen, "Rep"), "GOP", "DEM"),
     us_rep_4d = if_else(
       str_detect(us_rep_4d, "Rep"), "GOP", "DEM"),
-    state_rep_78d = if_else(
-      str_detect(state_rep_78d, "Rep"), "GOP", "DEM"),
     sc_justice_24_1 = if_else(
       str_detect(sc_justice_24_1, "Rep"), "GOP", "DEM"),
     sc_justice_24_2 = if_else(
@@ -161,10 +151,8 @@ allen_oh_2024 <- allen_oh_2024_raw |>
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
   mutate(
     party_line_voter = case_when(
-      pres == "GOP" & us_rep_4d == "GOP" & us_sen == "GOP" &
-      state_rep_78d == "GOP" ~ "GOP",
-      pres == "DEM" & us_rep_4d == "DEM" & us_sen == "DEM" &
-      state_rep_78d == "DEM" ~ "DEM",
+      pres == "GOP" & us_rep_4d == "GOP" & us_sen == "GOP" ~ "GOP",
+      pres == "DEM" & us_rep_4d == "DEM" & us_sen == "DEM" ~ "DEM",
       TRUE ~ NA
     )
   ) |> 
@@ -540,48 +528,96 @@ auglaize_oh_2024 <- auglaize_oh_2024_raw |>
 ```
 
 ```{r}
-auglaize_oh_2024_table <- auglaize_oh_2024 |> 
-  group_by(party_line_voter) |>
-  filter(!(is.na(party_line_voter))) |> 
-  summarise(
-    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
-    total = n()
-  )
+#| label: champaign-oh-2020
 
-auglaize_oh_2020_table <- auglaize_oh_2020 |>
-  group_by(party_line_voter) |>
-  filter(!(is.na(party_line_voter))) |> 
-  summarise(
-    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
-    total = n()
-  )
-
-
-combined_table <- bind_rows(
-  "2020" = auglaize_oh_2020_table,
-  "2024" = auglaize_oh_2024_table,
-  .id = "year"
-)
-
-combined_table |>
-  gt() |>
-  tab_header(
-    title = "Straight-Ticket Voting and SC Races",
-    subtitle = "Comparison of 2020 (unlabeled) and 2024 (labeled)"
-  ) |>
-  fmt_percent(
-    columns = prop_sc_in_line,
-    decimals = 1
-  ) |>
-  cols_label(
-    year = "Year",
-    party_line_voter = "Party-Line",
-    prop_sc_in_line = "Voted In Line (%)",
-    total = "Number of Voters"
+# Importing data
+champaign_oh_2020_raw <- read_csv(
+  "data/Ohio 2020/Data/Champaign County CVR Data/Champaign2020_G_Official.cvr/Champaign2020_G_Official.cvr.csv"
   ) |> 
-  gt_theme_538()
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+champaign_oh_2020 <- champaign_oh_2020_raw |> 
+  select(
+    row_number, choice_1_2_president_vote_for_1_biden_harris_democratic,
+    choice_2_3_president_vote_for_1_trump_pence_republican, 
+    choice_18_2_us_congress_d4_vote_for_1_shannon_m_freshour_democratic,
+    choice_19_3_us_congress_d4_vote_for_1_jim_jordan_republican,
+    choice_21_3_state_senator_d12_vote_for_1_matt_huffman_republican,
+    choice_22_2_state_senator_d12_vote_for_1_ken_poling_democratic,
+    choice_3_1_supreme_court_1_1_2021_vote_for_1_sharon_l_kennedy_nonpartisan,
+    choice_4_1_supreme_court_1_1_2021_vote_for_1_john_p_o_donnell_nonpartisan,
+    choice_5_1_supreme_court_1_2_2021_vote_for_1_jennifer_brunner_nonpartisan,
+    choice_6_1_supreme_court_1_2_2021_vote_for_1_judi_french_nonpartisan
+    ) |> 
+  
+  # Creating ballot choices and binaries
+  mutate(
+    pres = case_when(
+      choice_1_2_president_vote_for_1_biden_harris_democratic == 1 ~ "DEM",
+      choice_2_3_president_vote_for_1_trump_pence_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    us_rep_4d = case_when(
+      choice_18_2_us_congress_d4_vote_for_1_shannon_m_freshour_democratic == 1
+      ~ "DEM",
+      choice_19_3_us_congress_d4_vote_for_1_jim_jordan_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_sen_12d = case_when(
+      choice_22_2_state_senator_d12_vote_for_1_ken_poling_democratic == 1
+      ~ "DEM",
+      choice_21_3_state_senator_d12_vote_for_1_matt_huffman_republican == 1
+      ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_20_1 = case_when(
+      choice_4_1_supreme_court_1_1_2021_vote_for_1_john_p_o_donnell_nonpartisan
+      == 1 ~ "DEM",
+      choice_3_1_supreme_court_1_1_2021_vote_for_1_sharon_l_kennedy_nonpartisan
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_20_2 = case_when(
+      choice_5_1_supreme_court_1_2_2021_vote_for_1_jennifer_brunner_nonpartisan
+      == 1 ~ "DEM",
+      choice_6_1_supreme_court_1_2_2021_vote_for_1_judi_french_nonpartisan == 1
+      ~ "GOP",
+      TRUE ~ NA
+    )
+  ) |> 
+
+# Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_4d == "GOP" & state_sen_12d == "GOP" ~ "GOP",
+      pres == "DEM" & us_rep_4d == "DEM" & state_sen_12d == "DEM" ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_20_1 == "GOP" &
+      sc_justice_20_2 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_20_1 == "DEM" &
+      sc_justice_20_2 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) |> 
+  
+  # Final data frame cleaning; choosing not to drop the NAs
+  select(
+    row_number, pres, us_rep_4d, state_sen_12d, sc_justice_20_1,
+    sc_justice_20_2, party_line_voter, sc_races_matching
+  ) |> 
+  rename(cast_vote_record = row_number)
 
 ```
+
+
 
 
 
