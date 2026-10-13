@@ -11,14 +11,11 @@ library(tidyverse)
 library(janitor)
 library(dplyr)
 library(gtExtras)
-getwd()
+
 ```
 
 ```{r}
 #| label: allen-oh-2020
-
-list.files("data/")
-list.files("data/", pattern = "Allen_OH_2020", recursive = TRUE)
 
 # Importing data
 allen_oh_2020_raw <- read_excel(
@@ -115,7 +112,7 @@ allen_oh_2024 <- allen_oh_2024_raw |>
   # Selecting races of interest (major partisan races and Supreme Court)
   select(cast_vote_record, for_president_and_vice_president, for_u_s_senator, 
          for_representative_to_congress_4th_district, 
-         for_state_senator_12th_district, for_state_representative_78th_district, 
+         for_state_representative_78th_district, 
          for_justice_of_the_supreme_court_1_1_25, 
          for_justice_of_the_supreme_court_1_2_25,
          for_justice_of_the_supreme_court_ute_12_31_26) |> 
@@ -125,7 +122,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
     pres = for_president_and_vice_president,
     us_rep_4d = for_representative_to_congress_4th_district,
     us_sen = for_u_s_senator,
-    state_sen_12d = for_state_senator_12th_district,
     state_rep_78d = for_state_representative_78th_district,
     sc_justice_24_1 = for_justice_of_the_supreme_court_1_1_25,
     sc_justice_24_2 = for_justice_of_the_supreme_court_1_2_25,
@@ -141,7 +137,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
          str_detect(pres, "Rep|Dem"),
          str_detect(us_sen, "Rep|Dem"),
          str_detect(us_rep_4d, "Rep|Dem"),
-         str_detect(state_sen_12d, "Rep|Dem"),
          !(is.na(state_rep_78d))
     ) |> 
   
@@ -153,8 +148,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
       str_detect(us_sen, "Rep"), "GOP", "DEM"),
     us_rep_4d = if_else(
       str_detect(us_rep_4d, "Rep"), "GOP", "DEM"),
-    state_sen_12d = if_else(
-      str_detect(state_sen_12d, "Rep"), "GOP", "DEM"),
     state_rep_78d = if_else(
       str_detect(state_rep_78d, "Rep"), "GOP", "DEM"),
     sc_justice_24_1 = if_else(
@@ -168,10 +161,10 @@ allen_oh_2024 <- allen_oh_2024_raw |>
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
   mutate(
     party_line_voter = case_when(
-      pres == "GOP" & us_rep_4d == "GOP" & us_sen == "GOP" & 
-      state_sen_12d == "GOP" & state_rep_78d == "GOP" ~ "GOP",
+      pres == "GOP" & us_rep_4d == "GOP" & us_sen == "GOP" &
+      state_rep_78d == "GOP" ~ "GOP",
       pres == "DEM" & us_rep_4d == "DEM" & us_sen == "DEM" &
-      state_sen_12d == "DEM" & state_rep_78d == "DEM" ~ "DEM",
+      state_rep_78d == "DEM" ~ "DEM",
       TRUE ~ NA
     )
   ) |> 
@@ -368,7 +361,227 @@ ashtabula_oh_2024 <- ashtabula_oh_2024_raw |>
 
 ```
 
+```{r}
+#| label: auglaize-oh-2020
 
+# Importing data
+auglaize_oh_2020_raw <- read_excel(
+  "data/Ohio 2020/Data/Auglaize County CVR Data/Auglaize_OH_2020.xlsx"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+auglaize_oh_2020 <- auglaize_oh_2020_raw |> 
+  
+  # Selecting races of interest (major partisan races and Supreme Court)
+  select(cast_vote_record, for_president_and_vice_president, 
+         for_representative_to_congress_4th_district, 
+         for_state_senator_12th_district, for_state_representative_82nd_district,
+         for_state_representative_84th_district,
+         for_justice_of_the_supreme_court_1_1,
+         for_justice_of_the_supreme_court_1_2
+         ) |> 
+  # Renaming columns/races for conciseness
+  rename(
+    pres = for_president_and_vice_president,
+    us_rep_4d = for_representative_to_congress_4th_district,
+    state_sen_12d = for_state_senator_12th_district,
+    state_rep_82d = for_state_representative_82nd_district,
+    state_rep_84d = for_state_representative_84th_district,
+    sc_justice_20_1 = for_justice_of_the_supreme_court_1_1,
+    sc_justice_20_2 = for_justice_of_the_supreme_court_1_2
+  ) |> 
+  
+  # Filtering out any ballots that had an error or chose not to vote in any races of interest
+  filter(
+    if_all(everything(), ~ is.na(.) | !grepl("undervote|overvote", 
+                                                  as.character(.),
+                                                  ignore.case = TRUE)),
+         !is.na(pres),
+         str_detect(pres, "Rep|Dem"),
+         str_detect(us_rep_4d, "Rep|Dem"),
+         str_detect(state_sen_12d, "Rep|Dem"),
+         !(is.na(state_rep_82d) & is.na(state_rep_84d))
+    ) |> 
+  
+  # Changing ballot choices from candidates' names to their respective parties
+  mutate(
+    pres = if_else(
+      str_detect(pres, "Rep"), "GOP", "DEM"),
+    us_rep_4d = if_else(
+      str_detect(us_rep_4d, "Rep"), "GOP", "DEM"),
+    state_sen_12d = if_else(
+      str_detect(state_sen_12d, "Rep"), "GOP", "DEM"),
+    state_rep_82d = if_else(
+      str_detect(state_rep_82d, "Rep"), "GOP", "DEM"),
+    state_rep_84d = if_else(
+      str_detect(state_rep_84d, "Rep"), "GOP", "DEM"),
+    sc_justice_20_1 = if_else(
+      str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
+    sc_justice_20_2 = if_else(
+      str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+  ) |> 
+  
+  # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_4d == "GOP" & state_sen_12d == "GOP" &
+      (state_rep_82d == "GOP" | state_rep_84d == "GOP") ~ "GOP",
+      pres == "DEM" & us_rep_4d == "DEM" & state_sen_12d == "DEM" &
+      (state_rep_82d == "DEM" | state_rep_84d == "DEM") ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_20_1 == "GOP" &
+      sc_justice_20_2 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_20_1 == "DEM" &
+      sc_justice_20_2 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+```
+
+```{r}
+#| label: auglaize-oh-2024
+
+# Importing data
+auglaize_oh_2024_raw <- read_excel(
+  "data/Ohio 2024/Data/Auglaize County CVR Data/Auglaize_OH_2024.xlsx"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+auglaize_oh_2024 <- auglaize_oh_2024_raw |> 
+  
+  # Selecting races of interest (major partisan races and Supreme Court)
+  select(cast_vote_record, for_president_and_vice_president, for_u_s_senator, 
+         for_representative_to_congress_4th_district, 
+         for_state_representative_78th_district, 
+         for_state_representative_84th_district,
+         for_justice_of_the_supreme_court_1_1_25, 
+         for_justice_of_the_supreme_court_1_2_25,
+         for_justice_of_the_supreme_court_ute_12_31_26) |> 
+  
+  # Renaming columns/races for conciseness
+  rename(
+    pres = for_president_and_vice_president,
+    us_rep_4d = for_representative_to_congress_4th_district,
+    us_sen = for_u_s_senator,
+    state_rep_78d = for_state_representative_78th_district,
+    state_rep_84d = for_state_representative_84th_district,
+    sc_justice_24_1 = for_justice_of_the_supreme_court_1_1_25,
+    sc_justice_24_2 = for_justice_of_the_supreme_court_1_2_25,
+    sc_justice_24_3 = for_justice_of_the_supreme_court_ute_12_31_26
+  ) |> 
+  
+  # Filtering out any ballots that had an error or chose not to vote in any races of interest
+  filter(
+    if_all(everything(), ~ is.na(.) | !grepl("undervote|overvote", 
+                                                  as.character(.),
+                                                  ignore.case = TRUE)),
+         !is.na(pres),
+         str_detect(pres, "Rep|Dem"),
+         str_detect(us_sen, "Rep|Dem"),
+         str_detect(us_rep_4d, "Rep|Dem"),
+         !(is.na(state_rep_78d) & is.na(state_rep_84d))
+    ) |> 
+  
+  # Changing ballot choices from candidates' names to their respective parties
+  mutate(
+    pres = if_else(
+      str_detect(pres, "Rep"), "GOP", "DEM"),
+    us_sen = if_else(
+      str_detect(us_sen, "Rep"), "GOP", "DEM"),
+    us_rep_4d = if_else(
+      str_detect(us_rep_4d, "Rep"), "GOP", "DEM"),
+    state_rep_78d = if_else(
+      str_detect(state_rep_78d, "Rep"), "GOP", "DEM"),
+    state_rep_84d = if_else(
+      str_detect(state_rep_84d, "Rep"), "GOP", "DEM"),
+    sc_justice_24_1 = if_else(
+      str_detect(sc_justice_24_1, "Rep"), "GOP", "DEM"),
+    sc_justice_24_2 = if_else(
+      str_detect(sc_justice_24_2, "Rep"), "GOP", "DEM"),
+    sc_justice_24_3 = if_else(
+      str_detect(sc_justice_24_3, "Rep"), "GOP", "DEM")
+  ) |> 
+  
+  # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_4d == "GOP" & us_sen == "GOP" & 
+      (state_rep_78d == "GOP" | state_rep_84d == "GOP")
+      ~ "GOP",
+      pres == "DEM" & us_rep_4d == "DEM" & us_sen == "DEM" &
+      (state_rep_78d == "DEM" | state_rep_84d == "DEM")
+      ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_24_1 == "GOP" &
+      sc_justice_24_2 == "GOP" & sc_justice_24_3 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_24_1 == "DEM" &
+      sc_justice_24_2 == "DEM" & sc_justice_24_3 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+```
+
+```{r}
+auglaize_oh_2024_table <- auglaize_oh_2024 |> 
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+auglaize_oh_2020_table <- auglaize_oh_2020 |>
+  group_by(party_line_voter) |>
+  filter(!(is.na(party_line_voter))) |> 
+  summarise(
+    prop_sc_in_line = sum(sc_races_matching == TRUE, na.rm = TRUE) / n(),
+    total = n()
+  )
+
+
+combined_table <- bind_rows(
+  "2020" = auglaize_oh_2020_table,
+  "2024" = auglaize_oh_2024_table,
+  .id = "year"
+)
+
+combined_table |>
+  gt() |>
+  tab_header(
+    title = "Straight-Ticket Voting and SC Races",
+    subtitle = "Comparison of 2020 (unlabeled) and 2024 (labeled)"
+  ) |>
+  fmt_percent(
+    columns = prop_sc_in_line,
+    decimals = 1
+  ) |>
+  cols_label(
+    year = "Year",
+    party_line_voter = "Party-Line",
+    prop_sc_in_line = "Voted In Line (%)",
+    total = "Number of Voters"
+  ) |> 
+  gt_theme_538()
+
+```
 
 
 
