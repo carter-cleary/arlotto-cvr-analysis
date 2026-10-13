@@ -818,6 +818,148 @@ clark_oh_2020 <- clark_oh_2020_raw |>
 
 ```
 
+```{r}
+#| label: clark-oh-2024
+
+# Importing data
+clark_oh_2024_raw <- read_csv(
+  "data/Ohio 2024/Data/Clark County CVR Data/November_2024_Official.cvr/November_2024_Official.cvr.csv"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+clark_oh_2024 <- clark_oh_2024_raw |> 
+  select(
+    row_number, choice_35_13_president_and_vice_president_vote_for_1_kamala_d_harris_and_tim_walz_democratic,
+    choice_39_14_president_and_vice_president_vote_for_1_donald_j_trump_and_jd_vance_republican, 
+    choice_2_13_u_s_senator_vote_for_1_sherrod_brown_democratic,
+    choice_3_14_u_s_senator_vote_for_1_bernie_moreno_republican,
+    choice_22_13_representative_to_congress_10th_district_vote_for_1_amy_cox_democratic,
+    choice_24_14_representative_to_congress_10th_district_vote_for_1_mike_turner_republican,
+    choice_26_13_representative_to_congress_15th_district_vote_for_1_adam_miller_democratic,
+    choice_25_14_representative_to_congress_15th_district_vote_for_1_mike_carey_republican,
+    choice_28_13_state_senate_10th_district_vote_for_1_dan_mc_gregor_democratic,
+    choice_27_14_state_senate_10th_district_vote_for_1_kyle_koehler_republican,
+    choice_30_13_state_representative_71st_vote_for_1_krista_magaw_democratic,
+    choice_29_14_state_representative_71st_vote_for_1_levi_p_dean_republican,
+    choice_31_13_state_representative_74th_vote_for_1_derek_i_alvarado_democratic,
+    choice_32_14_state_representative_74th_vote_for_1_bernard_willis_republican,
+    choice_8_13_justice_of_the_supreme_court_u_t_e_12_31_26_vote_for_1_lisa_forbes_democratic,
+    choice_9_14_justice_of_the_supreme_court_u_t_e_12_31_26_vote_for_1_daniel_r_hawkins_republican,
+    choice_4_13_justice_of_the_supreme_court_f_t_c_1_1_2025_vote_for_1_michael_p_donnelly_democratic,
+    choice_5_14_justice_of_the_supreme_court_f_t_c_1_1_2025_vote_for_1_megan_e_shanahan_republican,
+    choice_6_14_justice_of_the_supreme_court_f_t_c_1_2_2025_vote_for_1_joseph_t_deters_republican,
+    choice_7_13_justice_of_the_supreme_court_f_t_c_1_2_2025_vote_for_1_melody_j_stewart_democratic
+    ) |> 
+  
+  # Creating ballot choices and binaries
+  mutate(
+    pres = case_when(
+      choice_35_13_president_and_vice_president_vote_for_1_kamala_d_harris_and_tim_walz_democratic == 1 ~ "DEM",
+      choice_39_14_president_and_vice_president_vote_for_1_donald_j_trump_and_jd_vance_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    us_sen = case_when(
+      choice_2_13_u_s_senator_vote_for_1_sherrod_brown_democratic == 1 
+      ~ "DEM",
+      choice_3_14_u_s_senator_vote_for_1_bernie_moreno_republican == 1
+      ~ "GOP"
+    ),
+    us_rep_10d = case_when(
+      choice_22_13_representative_to_congress_10th_district_vote_for_1_amy_cox_democratic
+      == 1 ~ "DEM",
+      choice_24_14_representative_to_congress_10th_district_vote_for_1_mike_turner_republican 
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    us_rep_15d = case_when(
+      choice_26_13_representative_to_congress_15th_district_vote_for_1_adam_miller_democratic
+      == 1 ~ "DEM",
+      choice_25_14_representative_to_congress_15th_district_vote_for_1_mike_carey_republican 
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_sen_10d = case_when(
+      choice_28_13_state_senate_10th_district_vote_for_1_dan_mc_gregor_democratic
+      == 1 ~ "DEM",
+      choice_27_14_state_senate_10th_district_vote_for_1_kyle_koehler_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_rep_71d = case_when(
+      choice_30_13_state_representative_71st_vote_for_1_krista_magaw_democratic
+      == 1 ~ "DEM",
+      choice_29_14_state_representative_71st_vote_for_1_levi_p_dean_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_rep_74d = case_when(
+      choice_31_13_state_representative_74th_vote_for_1_derek_i_alvarado_democratic
+      == 1 ~ "DEM",
+      choice_32_14_state_representative_74th_vote_for_1_bernard_willis_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_1 = case_when(
+      choice_4_13_justice_of_the_supreme_court_f_t_c_1_1_2025_vote_for_1_michael_p_donnelly_democratic
+      == 1 ~ "DEM",
+      choice_5_14_justice_of_the_supreme_court_f_t_c_1_1_2025_vote_for_1_megan_e_shanahan_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_2 = case_when(
+      choice_7_13_justice_of_the_supreme_court_f_t_c_1_2_2025_vote_for_1_melody_j_stewart_democratic
+      == 1 ~ "DEM",
+      choice_6_14_justice_of_the_supreme_court_f_t_c_1_2_2025_vote_for_1_joseph_t_deters_republican 
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_3 = case_when(
+      choice_8_13_justice_of_the_supreme_court_u_t_e_12_31_26_vote_for_1_lisa_forbes_democratic 
+      == 1 ~ "DEM",
+      choice_9_14_justice_of_the_supreme_court_u_t_e_12_31_26_vote_for_1_daniel_r_hawkins_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    )
+  ) |> 
+
+# Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_sen == "GOP" & (us_rep_10d == "GOP" |
+      us_rep_15d == "GOP") & state_sen_10d == "GOP" &
+      (state_rep_71d == "GOP" | state_rep_74d == "GOP") ~ "GOP",
+      pres == "DEM" & us_sen == "DEM" & (us_rep_10d == "DEM" |
+      us_rep_15d == "DEM") & state_sen_10d == "DEM" &
+      (state_rep_71d == "DEM" | state_rep_74d == "DEM") ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_24_1 == "GOP" &
+      sc_justice_24_2 == "GOP" & sc_justice_24_3 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_24_1 == "DEM" &
+      sc_justice_24_2 == "DEM" & sc_justice_24_3 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) |> 
+  
+  # Final data frame cleaning; choosing not to drop the NAs
+  select(
+    row_number, pres, us_sen, us_rep_10d, us_rep_15d, state_sen_10d,
+    state_rep_71d, state_rep_74d, sc_justice_24_1, sc_justice_24_2, 
+    sc_justice_24_3, party_line_voter, sc_races_matching
+  ) |> 
+  rename(cast_vote_record = row_number)
+
+```
+
+
+
 
 
 
