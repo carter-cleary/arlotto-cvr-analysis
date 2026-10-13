@@ -51,7 +51,9 @@ allen_oh_2020 <- allen_oh_2020_raw |>
          !is.na(pres),
          str_detect(pres, "Rep|Dem"),
          str_detect(us_rep_4d, "Rep|Dem"),
-         str_detect(state_sen_12d, "Rep|Dem")
+         str_detect(state_sen_12d, "Rep|Dem"),
+         !is.na(sc_justice_20_1),
+         !is.na(sc_justice_20_2)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -128,7 +130,10 @@ allen_oh_2024 <- allen_oh_2024_raw |>
          !is.na(pres),
          str_detect(pres, "Rep|Dem"),
          str_detect(us_sen, "Rep|Dem"),
-         str_detect(us_rep_4d, "Rep|Dem")
+         str_detect(us_rep_4d, "Rep|Dem"),
+         !is.na(sc_justice_24_1),
+         !is.na(sc_justice_24_2),
+         !is.na(sc_justice_24_3)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -207,7 +212,9 @@ ashtabula_oh_2020 <- ashtabula_oh_2020_raw |>
          str_detect(pres, "Rep|Dem"),
          str_detect(us_rep_14d, "Rep|Dem"),
          str_detect(state_sen_32d, "Rep|Dem"),
-         !(is.na(state_rep_64d) & is.na(state_rep_99d))
+         !(is.na(state_rep_64d) & is.na(state_rep_99d)),
+         !is.na(sc_justice_20_1),
+         !is.na(sc_justice_20_2)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -297,7 +304,10 @@ ashtabula_oh_2024 <- ashtabula_oh_2024_raw |>
          str_detect(us_sen, "Rep|Dem"),
          str_detect(us_rep_14d, "Rep|Dem"),
          str_detect(state_sen_32d, "Rep|Dem"),
-         !(is.na(state_rep_65d) & is.na(state_rep_99d))
+         !(is.na(state_rep_65d) & is.na(state_rep_99d)),
+         !is.na(sc_justice_24_1),
+         !is.na(sc_justice_24_2),
+         !is.na(sc_justice_24_3)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -389,7 +399,9 @@ auglaize_oh_2020 <- auglaize_oh_2020_raw |>
          str_detect(pres, "Rep|Dem"),
          str_detect(us_rep_4d, "Rep|Dem"),
          str_detect(state_sen_12d, "Rep|Dem"),
-         !(is.na(state_rep_82d) & is.na(state_rep_84d))
+         !(is.na(state_rep_82d) & is.na(state_rep_84d)),
+         !is.na(sc_justice_20_1),
+         !is.na(sc_justice_20_2)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -477,7 +489,10 @@ auglaize_oh_2024 <- auglaize_oh_2024_raw |>
          str_detect(pres, "Rep|Dem"),
          str_detect(us_sen, "Rep|Dem"),
          str_detect(us_rep_4d, "Rep|Dem"),
-         !(is.na(state_rep_78d) & is.na(state_rep_84d))
+         !(is.na(state_rep_78d) & is.na(state_rep_84d)),
+         !is.na(sc_justice_24_1),
+         !is.na(sc_justice_24_2),
+         !is.na(sc_justice_24_3)
     ) |> 
   
   # Changing ballot choices from candidates' names to their respective parties
@@ -958,7 +973,94 @@ clark_oh_2024 <- clark_oh_2024_raw |>
 
 ```
 
+```{r}
+#| label: clermont-oh-2020
 
+# Importing data
+clermont_oh_2020_raw <- read_excel(
+  "data/Ohio 2020/Data/Clermont County CVR Data/Clermont_OH_2020.xlsx"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+clermont_oh_2020 <- clermont_oh_2020_raw |> 
+  
+  # Selecting races of interest (major partisan races and Supreme Court)
+  select(cast_vote_record, for_president_and_vice_president, 
+         for_representative_to_congress_2nd_district, 
+         for_state_senator_14th_district, for_state_representative_65th_district,          
+         for_state_representative_66th_district,
+         for_justice_of_the_supreme_court_1_1,
+         for_justice_of_the_supreme_court_1_2) |> 
+  # Renaming columns/races for conciseness
+  rename(
+    pres = for_president_and_vice_president,
+    us_rep_2d = for_representative_to_congress_2nd_district,
+    state_sen_14d = for_state_senator_14th_district,
+    state_rep_65d = for_state_representative_65th_district,
+    state_rep_66d = for_state_representative_66th_district,
+    sc_justice_20_1 = for_justice_of_the_supreme_court_1_1,
+    sc_justice_20_2 = for_justice_of_the_supreme_court_1_2
+  ) |> 
+  
+  # Filtering out any ballots that had an error or chose not to vote in any races of interest
+  filter(
+    if_all(everything(), ~ is.na(.) | !grepl("undervote|overvote", 
+                                                  as.character(.),
+                                                  ignore.case = TRUE)),
+         !is.na(pres),
+         str_detect(pres, "Rep|Dem"),
+         str_detect(us_rep_2d, "Rep|Dem"),
+         str_detect(state_sen_14d, "Rep|Dem"),
+         !(is.na(state_rep_65d) & is.na(state_rep_66d)),
+         !is.na(sc_justice_20_1),
+         !is.na(sc_justice_20_2)
+    ) |> 
+  
+  # Changing ballot choices from candidates' names to their respective parties
+  mutate(
+    pres = if_else(
+      str_detect(pres, "Rep"), "GOP", "DEM"),
+    us_rep_2d = if_else(
+      str_detect(us_rep_2d, "Rep"), "GOP", "DEM"),
+    state_sen_14d = if_else(
+      str_detect(state_sen_14d, "Rep"), "GOP", "DEM"),
+    state_rep_65d = if_else(
+      str_detect(state_rep_65d, "Rep"), "GOP", "DEM"),
+    state_rep_66d = if_else(
+      str_detect(state_rep_66d, "Rep"), "GOP", "DEM"),
+    sc_justice_20_1 = if_else(
+      str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
+    sc_justice_20_2 = if_else(
+      str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+  ) |> 
+  
+  # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_2d == "GOP" & state_sen_14d == "GOP" &
+      (state_rep_65d == "GOP" | state_rep_66d == "GOP")
+      ~ "GOP",
+      pres == "DEM" & us_rep_2d == "DEM" & state_sen_14d == "DEM" &
+      (state_rep_65d == "DEM" | state_rep_66d == "DEM")
+      ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_20_1 == "GOP" &
+      sc_justice_20_2 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_20_1 == "DEM" &
+      sc_justice_20_2 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+```
 
 
 
