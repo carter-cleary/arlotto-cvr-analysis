@@ -94,7 +94,7 @@ allen_oh_2020 <- allen_oh_2020_raw |>
 #| label: allen-oh-2024
 
 # Importing data
-allen_oh_2024_raw<- read_excel(
+allen_oh_2024_raw <- read_excel(
   "data/Ohio 2024/Data/Allen County CVR Data/Allen_OH_2024.xlsx"
   ) |> 
   clean_names() |> 
@@ -106,7 +106,6 @@ allen_oh_2024 <- allen_oh_2024_raw |>
   # Selecting races of interest (major partisan races and Supreme Court)
   select(cast_vote_record, for_president_and_vice_president, for_u_s_senator, 
          for_representative_to_congress_4th_district, 
-         for_state_representative_78th_district, 
          for_justice_of_the_supreme_court_1_1_25, 
          for_justice_of_the_supreme_court_1_2_25,
          for_justice_of_the_supreme_court_ute_12_31_26) |> 
@@ -726,6 +725,100 @@ champaign_oh_2024 <- champaign_oh_2024_raw |>
   rename(cast_vote_record = row_number)
 
 ```
+
+```{r}
+#| label: clark-oh-2020
+
+# Importing data
+clark_oh_2020_raw <- read_csv(
+  "data/Ohio 2020/Data/Clark County CVR Data/Clark_Official_Canvass_Nov_2020.cvr/Clark_Official_Canvass_Nov_2020.cvr.csv"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+clark_oh_2020 <- clark_oh_2020_raw |> 
+  select(
+    row_number, choice_366_13_president_and_vice_president_vote_for_1_joseph_r_biden_kamala_harris_democratic,
+    choice_367_14_president_and_vice_president_vote_for_1_donald_j_trump_michael_r_pence_republican, 
+    choice_356_13_representative_to_congress_8th_district_vote_for_1_vanessa_enoch_democratic,
+    choice_355_14_representative_to_congress_8th_district_vote_for_1_warren_davidson_republican,
+    choice_357_13_state_senator_10th_district_vote_for_1_charles_ballard_democratic,
+    choice_358_14_state_senator_10th_district_vote_for_1_robert_hackett_republican,
+    choice_361_13_state_representative_79th_vote_for_1_cynthia_richards_democratic,
+    choice_360_14_state_representative_79th_vote_for_1_kyle_koehler_republican,
+    choice_372_1_justice_of_the_supreme_court_term_1_1_2021_vote_for_1_sharon_l_kennedy_nonpartisan,
+    choice_371_1_justice_of_the_supreme_court_term_1_1_2021_vote_for_1_john_p_o_donnell_nonpartisan,
+    choice_373_1_justice_of_the_supreme_court_term_1_2_2021_vote_for_1_jennifer_brunner_nonpartisan,
+    choice_374_1_justice_of_the_supreme_court_term_1_2_2021_vote_for_1_judi_french_nonpartisan
+    ) |> 
+  
+  # Creating ballot choices and binaries
+  mutate(
+    pres = case_when(
+      choice_366_13_president_and_vice_president_vote_for_1_joseph_r_biden_kamala_harris_democratic == 1 ~ "DEM",
+      choice_367_14_president_and_vice_president_vote_for_1_donald_j_trump_michael_r_pence_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    us_rep_8d = case_when(
+      choice_356_13_representative_to_congress_8th_district_vote_for_1_vanessa_enoch_democratic == 1
+      ~ "DEM",
+      choice_355_14_representative_to_congress_8th_district_vote_for_1_warren_davidson_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_sen_10d = case_when(
+      choice_357_13_state_senator_10th_district_vote_for_1_charles_ballard_democratic == 1
+      ~ "DEM",
+      choice_358_14_state_senator_10th_district_vote_for_1_robert_hackett_republican == 1
+      ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_20_1 = case_when(
+      choice_371_1_justice_of_the_supreme_court_term_1_1_2021_vote_for_1_john_p_o_donnell_nonpartisan
+      == 1 ~ "DEM",
+      choice_372_1_justice_of_the_supreme_court_term_1_1_2021_vote_for_1_sharon_l_kennedy_nonpartisan
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_20_2 = case_when(
+      choice_373_1_justice_of_the_supreme_court_term_1_2_2021_vote_for_1_jennifer_brunner_nonpartisan
+      == 1 ~ "DEM",
+      choice_374_1_justice_of_the_supreme_court_term_1_2_2021_vote_for_1_judi_french_nonpartisan == 1
+      ~ "GOP",
+      TRUE ~ NA
+    )
+  ) |> 
+
+# Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_8d == "GOP" & state_sen_10d == "GOP" ~ "GOP",
+      pres == "DEM" & us_rep_8d == "DEM" & state_sen_10d == "DEM" ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_20_1 == "GOP" &
+      sc_justice_20_2 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_20_1 == "DEM" &
+      sc_justice_20_2 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) |> 
+  
+  # Final data frame cleaning; choosing not to drop the NAs
+  select(
+    row_number, pres, us_rep_8d, state_sen_10d, sc_justice_20_1,
+    sc_justice_20_2, party_line_voter, sc_races_matching
+  ) |> 
+  rename(cast_vote_record = row_number)
+
+```
+
+
 
 
 
