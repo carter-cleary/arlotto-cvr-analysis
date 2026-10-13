@@ -617,7 +617,115 @@ champaign_oh_2020 <- champaign_oh_2020_raw |>
 
 ```
 
+```{r}
+#| label: champaign-oh-2024
 
+# Importing data
+champaign_oh_2024_raw <- read_csv(
+  "data/Ohio 2024/Data/Champaign County CVR Data/Champaign_2024G_Official.cvr/Champaign_2024G_Official.cvr.csv"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Restructuring the data
+champaign_oh_2024 <- champaign_oh_2024_raw |> 
+  select(
+    row_number, choice_6_5_for_president_and_vice_president_vote_for_1_kamala_d_harris_and_tim_walz_democratic,
+    choice_11_6_for_president_and_vice_president_vote_for_1_donald_j_trump_and_jd_vance_republican, 
+    choice_13_5_for_u_s_senator_vote_for_1_sherrod_brown_democratic,
+    choice_16_6_for_u_s_senator_vote_for_1_bernie_moreno_republican,
+    choice_50_6_for_representative_to_congress_vote_for_1_jim_jordan_republican,
+    choice_51_5_for_representative_to_congress_vote_for_1_tamie_wilson_democratic,
+    choice_54_6_for_state_representative_vote_for_1_tim_barhorst_republican,
+    choice_55_5_for_state_representative_vote_for_1_victoria_maddox_democratic,
+    choice_21_5_for_justice_of_the_supreme_court_ute_12_31_2026_vote_for_1_lisa_forbes_democratic,
+    choice_22_6_for_justice_of_the_supreme_court_ute_12_31_2026_vote_for_1_daniel_r_hawkins_republican,
+    choice_24_5_for_justice_of_the_supreme_court_ftc_1_1_2025_vote_for_1_michael_p_donnelly_democratic,
+    choice_25_6_for_justice_of_the_supreme_court_ftc_1_1_2025_vote_for_1_megan_e_shanahan_republican,
+    choice_27_6_for_justice_of_the_supreme_court_ftc_1_2_2025_vote_for_1_joseph_t_deters_republican,
+    choice_28_5_for_justice_of_the_supreme_court_ftc_1_2_2025_vote_for_1_melody_j_stewart_democratic
+    ) |> 
+  
+  # Creating ballot choices and binaries
+  mutate(
+    pres = case_when(
+      choice_6_5_for_president_and_vice_president_vote_for_1_kamala_d_harris_and_tim_walz_democratic == 1 ~ "DEM",
+      choice_11_6_for_president_and_vice_president_vote_for_1_donald_j_trump_and_jd_vance_republican == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    us_sen = case_when(
+      choice_13_5_for_u_s_senator_vote_for_1_sherrod_brown_democratic == 1 
+      ~ "DEM",
+      choice_16_6_for_u_s_senator_vote_for_1_bernie_moreno_republican == 1
+      ~ "GOP"
+    ),
+    us_rep_4d = case_when(
+      choice_51_5_for_representative_to_congress_vote_for_1_tamie_wilson_democratic
+      == 1 ~ "DEM",
+      choice_50_6_for_representative_to_congress_vote_for_1_jim_jordan_republican 
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    state_rep_85d = case_when(
+      choice_55_5_for_state_representative_vote_for_1_victoria_maddox_democratic
+      == 1 ~ "DEM",
+      choice_54_6_for_state_representative_vote_for_1_tim_barhorst_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_1 = case_when(
+      choice_24_5_for_justice_of_the_supreme_court_ftc_1_1_2025_vote_for_1_michael_p_donnelly_democratic
+      == 1 ~ "DEM",
+      choice_25_6_for_justice_of_the_supreme_court_ftc_1_1_2025_vote_for_1_megan_e_shanahan_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_2 = case_when(
+      choice_28_5_for_justice_of_the_supreme_court_ftc_1_2_2025_vote_for_1_melody_j_stewart_democratic
+      == 1 ~ "DEM",
+      choice_27_6_for_justice_of_the_supreme_court_ftc_1_2_2025_vote_for_1_joseph_t_deters_republican 
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    ),
+    sc_justice_24_3 = case_when(
+      choice_21_5_for_justice_of_the_supreme_court_ute_12_31_2026_vote_for_1_lisa_forbes_democratic 
+      == 1 ~ "DEM",
+      choice_22_6_for_justice_of_the_supreme_court_ute_12_31_2026_vote_for_1_daniel_r_hawkins_republican
+      == 1 ~ "GOP",
+      TRUE ~ NA
+    )
+  ) |> 
+
+# Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_sen == "GOP" & us_rep_4d == "GOP" &
+      state_rep_85d == "GOP" ~ "GOP",
+      pres == "DEM" & us_sen == "DEM" & us_rep_4d == "DEM" &
+      state_rep_85d == "DEM" ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_24_1 == "GOP" &
+      sc_justice_24_2 == "GOP" & sc_justice_24_3 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_24_1 == "DEM" &
+      sc_justice_24_2 == "DEM" & sc_justice_24_3 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  ) |> 
+  
+  # Final data frame cleaning; choosing not to drop the NAs
+  select(
+    row_number, pres, us_sen, us_rep_4d, state_rep_85d, sc_justice_24_1,
+    sc_justice_24_2, sc_justice_24_3, party_line_voter, sc_races_matching
+  ) |> 
+  rename(cast_vote_record = row_number)
+
+```
 
 
 
