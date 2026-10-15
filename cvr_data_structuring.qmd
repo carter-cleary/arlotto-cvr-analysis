@@ -1062,7 +1062,116 @@ clermont_oh_2020 <- clermont_oh_2020_raw |>
 
 ```
 
+```{r}
+#| label: clermont-oh-2024
 
+# Importing both spreadsheets
+clermont_oh_2024_raw_1 <- read_excel(
+  "data/Ohio 2024/Data/Clermont County CVR Data/Cast Vote Record 2024 General - 1.xlsx"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+clermont_oh_2024_raw_2 <- read_excel(
+  "data/Ohio 2024/Data/Clermont County CVR Data/Cast Vote Record 2024 General - 2.xlsx"
+  ) |> 
+  clean_names() |> 
+  suppressWarnings()
+
+# Appending the two data frames to make one large data frame
+clermont_oh_2024_raw <- rbind(clermont_oh_2024_raw_1, clermont_oh_2024_raw_2)
+
+# Restructuring the data
+clermont_oh_2024 <- clermont_oh_2024_raw |> 
+  
+  # Selecting races of interest (major partisan races and Supreme Court)
+  select(cast_vote_record, for_president_and_vice_president, for_u_s_senator, 
+         for_representative_to_congress_2nd_district,
+         for_state_senator_14th_district,
+         for_state_representative_62nd_district, 
+         for_state_representative_63rd_district,
+         for_justice_of_the_supreme_court_1_1_25, 
+         for_justice_of_the_supreme_court_1_2_25,
+         for_justice_of_the_supreme_court_ute_12_31_2026) |> 
+  
+  # Renaming columns/races for conciseness
+  rename(
+    pres = for_president_and_vice_president,
+    us_rep_2d = for_representative_to_congress_2nd_district,
+    us_sen = for_u_s_senator,
+    state_sen_14d = for_state_senator_14th_district,
+    state_rep_62d = for_state_representative_62nd_district,
+    state_rep_63d = for_state_representative_63rd_district,
+    sc_justice_24_1 = for_justice_of_the_supreme_court_1_1_25,
+    sc_justice_24_2 = for_justice_of_the_supreme_court_1_2_25,
+    sc_justice_24_3 = for_justice_of_the_supreme_court_ute_12_31_2026
+  ) |> 
+  
+  # Filtering out any ballots that had an error or chose not to vote in any races of interest
+  filter(
+    if_all(everything(), ~ is.na(.) | !grepl("undervote|overvote", 
+                                                  as.character(.),
+                                                  ignore.case = TRUE)),
+         !is.na(pres),
+         str_detect(pres, "Rep|Dem"),
+         str_detect(us_sen, "Rep|Dem"),
+         str_detect(us_rep_2d, "Rep|Dem"),
+         str_detect(state_sen_14d, "Rep|Dem"),
+         str_detect(state_rep_62d, "Rep|Dem"),
+         str_detect(state_rep_63d, "Rep|Dem"),
+         !is.na(sc_justice_24_1),
+         !is.na(sc_justice_24_2),
+         !is.na(sc_justice_24_3),
+         !(is.na(state_rep_62d) & is.na(state_rep_63d))
+    ) |> 
+  
+  # Changing ballot choices from candidates' names to their respective parties
+  mutate(
+    pres = if_else(
+      str_detect(pres, "Rep"), "GOP", "DEM"),
+    us_sen = if_else(
+      str_detect(us_sen, "Rep"), "GOP", "DEM"),
+    us_rep_2d = if_else(
+      str_detect(us_rep_2d, "Rep"), "GOP", "DEM"),
+    state_sen_14d = if_else(
+      str_detect(state_sen_14d, "Rep"), "GOP", "DEM"),
+    state_rep_78d = if_else(
+      str_detect(state_rep_62d, "Rep"), "GOP", "DEM"),
+    state_rep_84d = if_else(
+      str_detect(state_rep_63d, "Rep"), "GOP", "DEM"),
+    sc_justice_24_1 = if_else(
+      str_detect(sc_justice_24_1, "Rep"), "GOP", "DEM"),
+    sc_justice_24_2 = if_else(
+      str_detect(sc_justice_24_2, "Rep"), "GOP", "DEM"),
+    sc_justice_24_3 = if_else(
+      str_detect(sc_justice_24_3, "Rep"), "GOP", "DEM")
+  ) |> 
+  
+  # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
+  mutate(
+    party_line_voter = case_when(
+      pres == "GOP" & us_rep_2d == "GOP" & us_sen == "GOP" & state_sen_14d == "GOP" &
+      (state_rep_62d == "GOP" | state_rep_63d == "GOP")
+      ~ "GOP",
+      pres == "DEM" & us_rep_2d == "DEM" & us_sen == "DEM" & state_sen_14d == "DEM" &
+      (state_rep_62d == "DEM" | state_rep_63d == "DEM")
+      ~ "DEM",
+      TRUE ~ NA
+    )
+  ) |> 
+  
+  # Creating variable to label whether or not a voter's Supreme Court race choices aligned with their choices for the other races of interest
+  mutate(
+    sc_races_matching = case_when(
+      party_line_voter == "GOP" & sc_justice_24_1 == "GOP" &
+      sc_justice_24_2 == "GOP" & sc_justice_24_3 == "GOP" ~ TRUE,
+      party_line_voter == "DEM" & sc_justice_24_1 == "DEM" &
+      sc_justice_24_2 == "DEM" & sc_justice_24_3 == "DEM" ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+```
 
 
 
