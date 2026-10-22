@@ -1117,8 +1117,7 @@ clermont_oh_2024 <- clermont_oh_2024_raw |>
          str_detect(us_sen, "Rep|Dem"),
          str_detect(us_rep_2d, "Rep|Dem"),
          str_detect(state_sen_14d, "Rep|Dem"),
-         str_detect(state_rep_62d, "Rep|Dem"),
-         str_detect(state_rep_63d, "Rep|Dem"),
+         (str_detect(state_rep_62d, "Rep|Dem") | str_detect(state_rep_63d, "Rep|Dem")),
          !is.na(sc_justice_24_1),
          !is.na(sc_justice_24_2),
          !is.na(sc_justice_24_3),
@@ -1135,9 +1134,9 @@ clermont_oh_2024 <- clermont_oh_2024_raw |>
       str_detect(us_rep_2d, "Rep"), "GOP", "DEM"),
     state_sen_14d = if_else(
       str_detect(state_sen_14d, "Rep"), "GOP", "DEM"),
-    state_rep_78d = if_else(
+    state_rep_62d = if_else(
       str_detect(state_rep_62d, "Rep"), "GOP", "DEM"),
-    state_rep_84d = if_else(
+    state_rep_63d = if_else(
       str_detect(state_rep_63d, "Rep"), "GOP", "DEM"),
     sc_justice_24_1 = if_else(
       str_detect(sc_justice_24_1, "Rep"), "GOP", "DEM"),
@@ -1172,6 +1171,7 @@ clermont_oh_2024 <- clermont_oh_2024_raw |>
   )
 
 ```
+
 
 
 
