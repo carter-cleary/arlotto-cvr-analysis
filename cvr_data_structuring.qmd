@@ -68,6 +68,8 @@ allen_oh_2020 <- allen_oh_2020_raw |>
       str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
     sc_justice_20_2 = if_else(
       str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+    county = "allen_oh",
+    year = 2020
   ) |> 
   
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -233,6 +235,8 @@ ashtabula_oh_2020 <- ashtabula_oh_2020_raw |>
       str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
     sc_justice_20_2 = if_else(
       str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+    county = "ashtabula_oh",
+    year = 2020
   ) |> 
   
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -420,6 +424,8 @@ auglaize_oh_2020 <- auglaize_oh_2020_raw |>
       str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
     sc_justice_20_2 = if_else(
       str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+    county = "auglaize_oh",
+    year = 2020
   ) |> 
   
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -599,7 +605,9 @@ champaign_oh_2020 <- champaign_oh_2020_raw |>
       choice_6_1_supreme_court_1_2_2021_vote_for_1_judi_french_nonpartisan == 1
       ~ "GOP",
       TRUE ~ NA
-    )
+    ),
+    county = "champaign_oh",
+    year = 2020
   ) |> 
 
 # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -801,7 +809,9 @@ clark_oh_2020 <- clark_oh_2020_raw |>
       choice_374_1_justice_of_the_supreme_court_term_1_2_2021_vote_for_1_judi_french_nonpartisan == 1
       ~ "GOP",
       TRUE ~ NA
-    )
+    ),
+    county = "clark_oh",
+    year = 2020
   ) |> 
 
 # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -1034,6 +1044,8 @@ clermont_oh_2020 <- clermont_oh_2020_raw |>
       str_detect(sc_justice_20_1, "Sharon"), "GOP", "DEM"),
     sc_justice_20_2 = if_else(
       str_detect(sc_justice_20_2, "Judi"), "GOP", "DEM"),
+    county = "clermont_oh",
+    year = 2020
   ) |> 
   
   # Creating variable to label whether or not a voter voted exclusively for one party in the races of interest, besides the Supreme Court races
@@ -1171,6 +1183,52 @@ clermont_oh_2024 <- clermont_oh_2024_raw |>
   )
 
 ```
+
+```{r}
+#| label: big-join
+
+# Combining all cleaned Ohio 2020 CVR data for an aggregate of state's data
+oh_2020_big_bind <- bind_rows(allen_oh_2020, ashtabula_oh_2020, auglaize_oh_2020,
+                              champaign_oh_2020,clark_oh_2020, clermont_oh_2020)
+
+# Creating new data frame with calculated statistics for insights in each voter
+oh_2020_stats <- oh_2020_big_bind |> 
+  
+  # Removing CVR voter ID labels and SC choices to calculate voters' partisanship for labeled races
+  select(-c(
+    cast_vote_record, year, sc_justice_20_1, sc_justice_20_2, sc_races_matching
+    )) |> 
+  
+  # Adding proportions to see how partisan a voter is in labeled races
+  mutate(
+    prop_gop_labeled = rowSums(across(pres:state_rep_66d, ~ str_count(coalesce(.x, ""), "GOP")))
+    / rowSums(across(pres:state_rep_66d, ~ str_count(coalesce(.x, ""), "GOP|DEM"))),
+    prop_dem_labeled = 1 - prop_gop_labeled,
+    party_line_voter_non_sc = party_line_voter
+  ) |> 
+  
+  # Bringing back variables that had to be excluded to calculate proportions for non-SC races
+  mutate(
+    sc_justice_20_1 = oh_2020_big_bind$sc_justice_20_1,
+    sc_justice_20_2 = oh_2020_big_bind$sc_justice_20_2
+    ) |> 
+  
+  # Calculating proportions for SC races
+  mutate(
+    prop_gop_sc = case_when(
+      (sc_justice_20_1 == "GOP") & (sc_justice_20_2 == "GOP") ~ 1,
+      (sc_justice_20_1 == "DEM") & (sc_justice_20_2 == "DEM") ~ 0,
+      TRUE ~ 0.5
+    ),
+    prop_dem_sc = 1 - prop_gop_sc
+  )
+
+# 
+```
+
+
+
+
 
 
 
